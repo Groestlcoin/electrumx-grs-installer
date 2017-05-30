@@ -14,7 +14,7 @@ function assert_pyrocksdb {
 function install_electrumx {
 	_DIR=$(pwd)
 	rm -rf "/tmp/electrumx/"
-	git clone https://github.com/kyuupichan/electrumx /tmp/electrumx
+	git clone https://github.com/Groestlcoin/electrumx /tmp/electrumx
 	cd /tmp/electrumx
 	if [ $USE_ROCKSDB == 1 ]; then
 		# We don't necessarily want to install plyvel

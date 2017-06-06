@@ -40,7 +40,7 @@ function install_pyrocksdb {
 
 function add_user {
 	useradd electrumx-grs
-	id -u electrumx || _error "Could not add user account" 1
+	id -u electrumx-grs || _error "Could not add user account" 1
 }
 
 function generate_cert {

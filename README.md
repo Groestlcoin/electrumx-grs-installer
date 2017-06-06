@@ -1,17 +1,16 @@
-# electrumx-installer
-A script to automate the installation of electrumx 🤖
+# electrumx-grs-installer
+A script to automate the installation of electrumx-grs 🤖
 
-Installing electrumx isn't really straight-forward (yet). You have to install the latest version of Python and various dependencies for
-one of the database engines. Then you have to integrate electrumx into your init system.
+Installing electrumx-grs isn't really straight-forward (yet). You have to install the latest version of Python and various dependencies for one of the database engines. Then you have to integrate electrumx into your init system.
 
-`electrumx-installer` simplifies this process to running a single command. All that's left to do for you
+`electrumx-grs-installer` simplifies this process to running a single command. All that's left to do for you
 is to customise the configuration.
 
 ## Usage
 Clone the repository and run `install.sh` as root:
 
-    git clone https://github.com/bauerj/electrumx-installer
-    cd electrumx-installer
+    git clone https://github.com/Groestlcoin/electrumx-grs-installer
+    cd electrumx-grs-installer
     sudo -H ./install.sh
 
 See `install.sh -h` for command line options.

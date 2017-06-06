@@ -10,8 +10,8 @@ UPDATE_ONLY=0
 USE_ROCKSDB=1
 
 # redirect child output
-rm /tmp/electrumx-installer-$$.log > /dev/null 2>&1
-exec 3>&1 4>&2 2>/tmp/electrumx-installer-$$.log >&2
+rm /tmp/electrumx-grs-installer-$$.log > /dev/null 2>&1
+exec 3>&1 4>&2 2>/tmp/electrumx-grs-installer-$$.log >&2
 
 while [[ $# -gt 0 ]]; do
 	key="$1"
@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
 		cat >&4 <<HELP
 Usage: install.sh [OPTIONS]
 
-Install electrumx.
+Install electrumx-grs.
 
  -h --help   Show this help
  -d --dbdir  Set database directory (default: /db/)
@@ -50,7 +50,7 @@ done
 
 function _error {
 	echo -en "\n---- LOG OUTPUT BELOW ----\n" >&4
-	tail -n 50 /tmp/electrumx-installer-$$.log >&4
+	tail -n 50 /tmp/electrumx-grs-installer-$$.log >&4
 	echo -en "\n---- LOG OUTPUT ABOVE ----\n" >&4
 	printf "\r${RED}ERROR:${NC}   ${1}\n" >&4
 	if (( ${2:--1} > -1 )); then
@@ -107,11 +107,11 @@ fi
 
 if [ $UPDATE_ONLY == 0 ]; then
 	if which electrumx_server.py > /dev/null 2>&1; then
-		_error "electrumx is already installed" 9
+		_error "electrumx-grs is already installed" 9
 	fi
 	_status "Installing installer dependencies"
 	install_script_dependencies
-	_status "Adding new user for electrumx"
+	_status "Adding new user for electrumx-grs"
 	add_user
 	_status "Creating database directory in $DB_DIR"
 	create_db_dir $DB_DIR
@@ -150,7 +150,7 @@ if [ $UPDATE_ONLY == 0 ]; then
 		install_leveldb
 	fi
 
-	_status "Installing electrumx"
+	_status "Installing electrumx-grs"
 	install_electrumx
 
 	_status "Installing init scripts"
@@ -158,8 +158,8 @@ if [ $UPDATE_ONLY == 0 ]; then
 
 	_status "Generating TLS certificates"
 	generate_cert
-	_info "electrumx has been installed successfully. Edit /etc/electrumx.conf to configure it."
+	_info "electrumx-grs has been installed successfully. Edit /etc/electrumx-grs.conf to configure it."
 else
-	_info "Updating electrumx"
+	_info "Updating electrumx-grs"
 	install_electrumx
 fi

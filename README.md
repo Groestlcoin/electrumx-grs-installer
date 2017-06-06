@@ -12,6 +12,7 @@ Clone the repository and run `install.sh` as root:
     git clone https://github.com/Groestlcoin/electrumx-grs-installer
     
     cd electrumx-grs-installer
+    
     sudo -H ./install.sh
 
 See `install.sh -h` for command line options.

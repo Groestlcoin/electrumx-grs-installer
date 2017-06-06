@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /root/electrumx-grs-installer/
+cd /tmp/electrumx-grs-installer/
 ./install.sh
 electrumx_server.py
 

@@ -1,7 +1,7 @@
 # Contains functions that should work on all POSIX-compliant systems
 function create_db_dir {
 	mkdir -p $1
-	chown electrumx:electrumx $1
+	chown electrumx-grs:electrumx-grs $1
 }
 
 function assert_pyrocksdb {
@@ -13,7 +13,7 @@ function assert_pyrocksdb {
 
 function install_electrumx {
 	_DIR=$(pwd)
-	rm -rf "/tmp/electrumx/"
+	rm -rf "/root/electrumx-grs/"
 	git clone https://github.com/Groestlcoin/electrumx /tmp/electrumx
 	cd /tmp/electrumx
 	if [ $USE_ROCKSDB == 1 ]; then
@@ -22,7 +22,7 @@ function install_electrumx {
 	fi
 	python3 setup.py install > /dev/null 2>&1
 	if ! python3 setup.py install; then
-		_error "Unable to install electrumx" 7
+		_error "Unable to install electrumx-grs" 7
 	fi
 	cd $_DIR
 }
@@ -39,7 +39,7 @@ function install_pyrocksdb {
 }
 
 function add_user {
-	useradd electrumx
+	useradd electrumx-grs
 	id -u electrumx || _error "Could not add user account" 1
 }
 
@@ -49,17 +49,17 @@ function generate_cert {
 		return
 	fi
 	_DIR=$(pwd)
-	mkdir -p /etc/electrumx/
-	cd /etc/electrumx
+	mkdir -p /etc/electrumx-grs/
+	cd /etc/electrumx-grs
 	openssl genrsa -des3 -passout pass:x -out server.pass.key 2048
 	openssl rsa -passin pass:x -in server.pass.key -out server.key
 	rm server.pass.key
 	openssl req -new -key server.key -batch -out server.csr
 	openssl x509 -req -days 1825 -in server.csr -signkey server.key -out server.crt
 	rm server.csr
-	chown electrumx:electrumx /etc/electrumx -R
-	chmod 600 /etc/electrumx/server*
+	chown electrumx-grs:electrumx-grs /etc/electrumx-grs -R
+	chmod 600 /etc/electrumx-grs/server*
 	cd $_DIR
-	echo "SSL_CERTFILE=/etc/electrumx/server.crt" >> /etc/electrumx.conf
-	echo "SSL_KEYFILE=/etc/electrumx/server.key" >> /etc/electrumx.conf
+	echo "SSL_CERTFILE=/etc/electrumx-grs/server.crt" >> /etc/electrumx-grs.conf
+	echo "SSL_KEYFILE=/etc/electrumx-grs/server.key" >> /etc/electrumx-grs.conf
 }

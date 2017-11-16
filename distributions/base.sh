@@ -13,7 +13,8 @@ function assert_pyrocksdb {
 
 function install_electrumx {
 	_DIR=$(pwd)
-	rm -rf "/root/electrumx-grs/"
+        python3 -m pip install multidict || true
+	rm -rf "/tmp/electrumx-grs/"
 	git clone https://github.com/Groestlcoin/electrumx-grs /tmp/electrumx-grs
 	cd /tmp/electrumx-grs
 	if [ $USE_ROCKSDB == 1 ]; then
@@ -51,8 +52,8 @@ function generate_cert {
 	_DIR=$(pwd)
 	mkdir -p /etc/electrumx-grs/
 	cd /etc/electrumx-grs
-	openssl genrsa -des3 -passout pass:x -out server.pass.key 2048
-	openssl rsa -passin pass:x -in server.pass.key -out server.key
+	openssl genrsa -des3 -passout pass:xxxx -out server.pass.key 2048
+	openssl rsa -passin pass:xxxx -in server.pass.key -out server.key
 	rm server.pass.key
 	openssl req -new -key server.key -batch -out server.csr
 	openssl x509 -req -days 1825 -in server.csr -signkey server.key -out server.crt
@@ -60,6 +61,9 @@ function generate_cert {
 	chown electrumx-grs:electrumx-grs /etc/electrumx-grs -R
 	chmod 600 /etc/electrumx-grs/server*
 	cd $_DIR
-	echo "SSL_CERTFILE=/etc/electrumx-grs/server.crt" >> /etc/electrumx-grs.conf
+	echo -e "\nSSL_CERTFILE=/etc/electrumx-grs/server.crt" >> /etc/electrumx-grs.conf
 	echo "SSL_KEYFILE=/etc/electrumx-grs/server.key" >> /etc/electrumx-grs.conf
+        echo "TCP_PORT=50001" >> /etc/electrumx-grs.conf
+        echo "SSL_PORT=50002" >> /etc/electrumx-grs.conf
+        echo -e "# Listen on all interfaces:\nHOST=" >> /etc/electrumx-grs.conf
 }

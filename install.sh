@@ -164,5 +164,5 @@ if [ $UPDATE_ONLY == 0 ]; then
 else
 	_info "Updating electrumx-grs"
 	install_electrumx
-        _info "Installed $(python3 -m pip freeze | grep electrumx)"
+        _info "Installed $(python3 -m pip freeze | grep electrumx-grs)"
 fi

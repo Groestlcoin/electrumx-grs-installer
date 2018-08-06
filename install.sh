@@ -8,24 +8,38 @@ NC='\033[0m' # No Color
 DB_DIR="/db"
 UPDATE_ONLY=0
 USE_ROCKSDB=1
+ELECTRUMX_GIT_URL="https://github.com/Groestlcoin/electrumx-grs"
+ELECTRUMX_GIT_BRANCH="master"
 
-# redirect child output
-rm /tmp/electrumx-grs-installer-$$.log > /dev/null 2>&1
-exec 3>&1 4>&2 2>/tmp/electrumx-grs-installer-$$.log >&2
+installer=$(realpath $0)
+
+cd "$(dirname "$0")"
+
+# Self-update
+if which git > /dev/null 2>&1; then
+    _version_now=$(git rev-parse HEAD)
+    git pull > /dev/null 2>&1
+    if [ $_version_now != $(git rev-parse HEAD) ]; then
+        echo "Updated installer."
+        exec $installer "$@"
+    fi
+fi
 
 while [[ $# -gt 0 ]]; do
 	key="$1"
 	case $key in
 		-h|--help)
-		cat >&4 <<HELP
+		cat >&2 <<HELP
 Usage: install.sh [OPTIONS]
 
 Install electrumx-grs.
 
- -h --help   Show this help
- -d --dbdir  Set database directory (default: /db/)
- --update    Update previously installed version
- --leveldb   Use LevelDB instead of RocksDB
+ -h --help                         Show this help
+ -d --dbdir dir                    Set database directory (default: /db/)
+ --update                          Update previously installed version
+ --leveldb                         Use LevelDB instead of RocksDB
+--electrumx-grs-git-url url        Install ElectrumX-grs from this URL instead
+--electrumx-grs-git-branch branch  Install specific branch of ElectrumX-grs repository
 HELP
 		exit 0
 		;;
@@ -39,13 +53,25 @@ HELP
 	    --leveldb)
 	    USE_ROCKSDB=0
 	    ;;
+            --electrumx-grs-git-url)
+            ELECTRUMX_GIT_URL="$2"
+            shift
+            ;;
+            --electrumx-grs-git-branch)
+            ELECTRUMX_GIT_BRANCH="$2"
+            shift
+            ;;
 	    *)
-	    _warning "Unknown option $key"
+	    echo "WARNING: Unknown option $key" >&2
 	    exit 12
 	    ;;
 	esac
 	shift # past argument or value
 done
+
+# redirect child output
+rm /tmp/electrumx-grs-installer-$$.log > /dev/null 2>&1
+exec 3>&1 4>&2 2>/tmp/electrumx-grs-installer-$$.log >&2
 
 
 function _error {
@@ -84,11 +110,11 @@ function _progress {
 	printf "\r%3d.%1d%% %.${_pd}s" $(( $_progress_count * 100 / $_progress_total )) $(( ($_progress_count * 1000 / $_progress_total) % 10 )) $_pstr >&3
 }
 
+rocksdb_compile=1
+
 if [[ $EUID -ne 0 ]]; then
    _error "This script must be run as root (e.g. sudo -H $0)" 1
 fi
-
-cd "$(dirname "$0")"
 
 if [ -f /etc/os-release ]; then
 	# Load release information
@@ -108,7 +134,7 @@ else
 fi
 
 if [ $UPDATE_ONLY == 0 ]; then
-	if which electrumx_server.py > /dev/null 2>&1; then
+	if which electrumx_server > /dev/null 2>&1; then
 		_error "electrumx-grs is already installed. Use $0 --update to... update." 9
 	fi
 	_status "Installing installer dependencies"
@@ -140,13 +166,33 @@ if [ $UPDATE_ONLY == 0 ]; then
 	fi
 
 	if [ $USE_ROCKSDB == 1 ]; then
-		_progress_total=$(( $_progress_total + 2 ))
-		_status "Installing RocksDB"
-		install_rocksdb
-		_status "Installing pyrocksdb"
-		install_pyrocksdb
+	    _progress_total=$(( $_progress_total + 2 ))
+        _status "Installing RocksDB"
+        if [ ! -z $has_rocksdb_binary ]; then
+            binary_install_rocksdb
+        else
+            install_rocksdb
+        fi
+                if [ -z $newer_rocksdb ]; then
+			 _status "Installing pyrocksdb"
+			install_pyrocksdb
+		else
+			 _status "Installing python_rocksdb"
+			install_python_rocksdb
+		fi
 		_status "Checking pyrocksdb installation"
-		assert_pyrocksdb
+		if [ ! check_pyrocksdb ]; then
+            if [ ! -z $has_rocksdb_binary ]; then
+                _status "binary rocksdb doesn't work - compiling instead"
+                binary_uninstall_rocksdb
+                install_rocksdb
+                if [ ! check_pyrocksdb ]; then
+                    _error "pyrocksdb installation still doesn't work" 7
+                fi
+            else
+                _error "pyrocksdb installation doesn't work" 6
+            fi
+		fi
 	else
 		_status "Installing leveldb"
 		install_leveldb
@@ -160,9 +206,27 @@ if [ $UPDATE_ONLY == 0 ]; then
 
 	_status "Generating TLS certificates"
 	generate_cert
+
+  if declare -f package_cleanup > /dev/null; then
+		_status "Cleaning up"
+		package_cleanup
+	fi
 	_info "electrumx-grs has been installed successfully. Edit /etc/electrumx-grs.conf to configure it."
 else
 	_info "Updating electrumx-grs"
+	i=0
+	while python3 -m pip show electrumx-grs; do
+	    python3 -m pip uninstall -y electrumx-grs || true
+	    ((i++))
+	    if "$i" -gt 5; then
+	        break
+	    fi
+	done
+	if grep '/usr/local/bin/electrumx_server.py' /etc/systemd/system/electrumx-grs.service; then
+	    _info "Updating pre-1.5 systemd configuration to new binary names"
+		sed -i -- 's/_server.py/_server/g' /etc/systemd/system/electrumx-grs.service
+		systemctl daemon-reload
+	fi
 	install_electrumx
-        _info "Installed $(python3 -m pip freeze | grep electrumx-grs)"
+        _info "Installed $(python3 -m pip freeze | grep -i electrumx-grs)"
 fi

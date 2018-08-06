@@ -4,25 +4,22 @@ function create_db_dir {
 	chown electrumx-grs:electrumx-grs $1
 }
 
-function assert_pyrocksdb {
-	if ! python3 -B -c "import rocksdb"; then
-		_error "pyrocksdb installation doesn't work"
-		exit 6
-	fi
+function check_pyrocksdb {
+    python3 -B -c "import rocksdb"
 }
 
 function install_electrumx {
 	_DIR=$(pwd)
-        python3 -m pip install multidict || true
 	rm -rf "/tmp/electrumx-grs/"
-	git clone https://github.com/Groestlcoin/electrumx-grs /tmp/electrumx-grs
+	git clone $ELECTRUMX_GIT_URL /tmp/electrumx-grs
 	cd /tmp/electrumx-grs
-	if [ $USE_ROCKSDB == 1 ]; then
+        git checkout $ELECTRUMX_GIT_BRANCH
+  if [ $USE_ROCKSDB == 1 ]; then
 		# We don't necessarily want to install plyvel
 		sed -i "s/'plyvel',//" setup.py
 	fi
-	python3 setup.py install > /dev/null 2>&1
-	if ! python3 setup.py install; then
+	python3 -m pip install . --upgrade > /dev/null 2>&1
+	if ! python3 -m pip install . --upgrade; then
 		_error "Unable to install electrumx-grs" 7
 	fi
 	cd $_DIR
@@ -37,6 +34,11 @@ function install_pip {
 function install_pyrocksdb {
 	python3 -m pip install "Cython>=0.20"
 	python3 -m pip install git+git://github.com/stephan-hof/pyrocksdb.git || _error "Could not install pyrocksdb" 1
+}
+
+function install_python_rocksdb {
+        python3 -m pip install "Cython>=0.20"
+	python3 -m pip install python-rocksdb || _error "Could not install python_rocksdb" 1
 }
 
 function add_user {
@@ -67,3 +69,5 @@ function generate_cert {
         echo "SSL_PORT=50002" >> /etc/electrumx-grs.conf
         echo -e "# Listen on all interfaces:\nHOST=" >> /etc/electrumx-grs.conf
 }
+
+function ver { printf "%03d%03d%03d%03d" $(echo "$1" | tr '.' ' '); }

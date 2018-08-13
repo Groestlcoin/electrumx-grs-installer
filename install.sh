@@ -7,9 +7,11 @@ NC='\033[0m' # No Color
 
 DB_DIR="/db"
 UPDATE_ONLY=0
+UPDATE_PYTHON=0
+VERBOSE=0
 USE_ROCKSDB=1
-ELECTRUMX_GIT_URL="http://github.com/kyuupichan/electrumx"
-ELECTRUMX_GIT_BRANCH="master"
+ELECTRUMX_GIT_URL="https://github.com/kyuupichan/electrumx"
+ELECTRUMX_GIT_BRANCH=""
 
 installer=$(realpath $0)
 
@@ -35,8 +37,10 @@ Usage: install.sh [OPTIONS]
 Install electrumx-grs.
 
  -h --help                         Show this help
+ -v --verbose				        Enable verbose logging
  -d --dbdir dir                    Set database directory (default: /db/)
  --update                          Update previously installed version
+ --update-python			        Install Python 3.7 and use with electrumx-grs (doesn't remove system installation of Python 3)
  --leveldb                         Use LevelDB instead of RocksDB
 --electrumx-grs-git-url url        Install ElectrumX-grs from this URL instead
 --electrumx-grs-git-branch branch  Install specific branch of ElectrumX-grs repository
@@ -47,20 +51,26 @@ HELP
 	    DB_DIR="$2"
 	    shift # past argument
 	    ;;
+		-v|--verbose)
+		VERBOSE=1
+		;;
 	    --update)
 	    UPDATE_ONLY=1
+	    ;;
+		--update-python)
+	    UPDATE_PYTHON=1
 	    ;;
 	    --leveldb)
 	    USE_ROCKSDB=0
 	    ;;
-            --electrumx-grs-git-url)
-            ELECTRUMX_GIT_URL="$2"
-            shift
-            ;;
-            --electrumx-grs-git-branch)
-            ELECTRUMX_GIT_BRANCH="$2"
-            shift
-            ;;
+		--electrumx-grs-git-url)
+		ELECTRUMX_GIT_URL="$2"
+		shift
+		;;
+		--electrumx-grs-git-branch)
+		ELECTRUMX_GIT_BRANCH="$2"
+		shift
+		;;
 	    *)
 	    echo "WARNING: Unknown option $key" >&2
 	    exit 12
@@ -70,8 +80,12 @@ HELP
 done
 
 # redirect child output
-rm /tmp/electrumx-grs-installer-$$.log > /dev/null 2>&1
+echo "" > /tmp/electrumx-grs-installer-$$.log
 exec 3>&1 4>&2 2>/tmp/electrumx-grs-installer-$$.log >&2
+
+if [ $VERBOSE == 1 ]; then
+	tail -f /tmp/electrumx-grs-installer-$$.log >&4 &
+fi
 
 
 function _error {
@@ -133,8 +147,16 @@ else
 	_error "'$NAME' is not yet supported" 3
 fi
 
-if [ $UPDATE_ONLY == 0 ]; then
-	if which electrumx_server > /dev/null 2>&1; then
+python=""
+
+for _python in python3.7 python3; do
+	if which $_python; then
+	python=$_python
+	fi
+done
+
+if [ $UPDATE_ONLY == 0 ] || [ $UPDATE_PYTHON == 1 ]; then
+	if which electrumx_server > /dev/null 2>&1 && [ $UPDATE_PYTHON == 0 ]; then
 		_error "electrumx-grs is already installed. Use $0 --update to... update." 9
 	fi
 	_status "Installing installer dependencies"
@@ -144,37 +166,41 @@ if [ $UPDATE_ONLY == 0 ]; then
 	_status "Creating database directory in $DB_DIR"
 	create_db_dir $DB_DIR
 
-	if [[ $(python3 -V 2>&1) == *"Python 3.6"* ]] > /dev/null 2>&1; then
+	if [[ $($python -V 2>&1) == *"Python 3.6"* ]] > /dev/null 2>&1 && [ $UPDATE_PYTHON == 0 ]; then
 		_info "Python 3.6 is already installed."
+	elif [[ $($python -V 2>&1) == *"Python 3.7"* ]] > /dev/null 2>&1; then
+		_info "Python 3.7 is already installed."
 	else
-		_status "Installing Python 3.6"
-		install_python36
+		_status "Installing Python 3.7"
+		python=python3.7
+		install_python37
+		if [[ $($python -V 2>&1) == *"Python 3.7"* ]] > /dev/null 2>&1; then
+			_info "Python 3.7 successfully installed"
+		else
+			_error "Unable to install Python 3.7" 4
+		fi
 	fi
-	if [[ $(python3 -V 2>&1) == *"Python 3.6"* ]] > /dev/null 2>&1; then
-		_info "Python 3.6 successfully installed"
-	else
-		_error "Unable to install Python 3.6" 4
-	fi
+
 
 	_status "Installing git"
 	install_git
 
-	if ! python3 -m pip > /dev/null 2>&1; then
-		_progress_total=$(( $_progress_total + 2 ))
+	if ! $python -m pip > /dev/null 2>&1; then
+		_progress_total=$(( $_progress_total + 1 ))
 		_status "Installing pip"
 		install_pip
 	fi
 
 	if [ $USE_ROCKSDB == 1 ]; then
-	    _progress_total=$(( $_progress_total + 2 ))
+	    _progress_total=$(( $_progress_total + 3 ))
         _status "Installing RocksDB"
         if [ ! -z $has_rocksdb_binary ]; then
             binary_install_rocksdb
         else
             install_rocksdb
         fi
-                if [ -z $newer_rocksdb ]; then
-			 _status "Installing pyrocksdb"
+            if [ -z $newer_rocksdb ]; then
+			    _status "Installing pyrocksdb"
 			install_pyrocksdb
 		else
 			 _status "Installing python_rocksdb"
@@ -201,11 +227,15 @@ if [ $UPDATE_ONLY == 0 ]; then
 	_status "Installing electrumx-grs"
 	install_electrumx
 
-	_status "Installing init scripts"
-	install_init
+	if [ $UPDATE_PYTHON == 0 ]; then
 
-	_status "Generating TLS certificates"
-	generate_cert
+		_status "Installing init scripts"
+		install_init
+
+		_status "Generating TLS certificates"
+		generate_cert
+
+	fi
 
   if declare -f package_cleanup > /dev/null; then
 		_status "Cleaning up"
@@ -215,8 +245,8 @@ if [ $UPDATE_ONLY == 0 ]; then
 else
 	_info "Updating electrumx-grs"
 	i=0
-	while python3 -m pip show electrumx-grs; do
-	    python3 -m pip uninstall -y electrumx-grs || true
+	while $python -m pip show electrumx-grs; do
+	    $python -m pip uninstall -y electrumx-grs || true
 	    ((i++))
 	    if "$i" -gt 5; then
 	        break
@@ -228,5 +258,5 @@ else
 		systemctl daemon-reload
 	fi
 	install_electrumx
-        _info "Installed $(python3 -m pip freeze | grep -i electrumx-grs)"
+        _info "Installed $($python -m pip freeze | grep -i electrumx-grs)"
 fi

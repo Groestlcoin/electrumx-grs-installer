@@ -37,10 +37,10 @@ Usage: install.sh [OPTIONS]
 Install electrumx-grs.
 
  -h --help                         Show this help
- -v --verbose				        Enable verbose logging
+ -v --verbose                      Enable verbose logging
  -d --dbdir dir                    Set database directory (default: /db/)
  --update                          Update previously installed version
- --update-python			        Install Python 3.7 and use with electrumx-grs (doesn't remove system installation of Python 3)
+ --update-python                   Install Python 3.7 and use with electrumx-grs (doesn't remove system installation of Python 3)
  --leveldb                         Use LevelDB instead of RocksDB
 --electrumx-grs-git-url url        Install ElectrumX-grs from this URL instead
 --electrumx-grs-git-branch branch  Install specific branch of ElectrumX-grs repository

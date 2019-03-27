@@ -3,7 +3,7 @@ function install_init {
 		_error "/etc/systemd/system does not exist. Is systemd installed?" 8
 	fi
 	cp /tmp/electrumx-grs/contrib/systemd/electrumx.service /etc/systemd/system/electrumx-grs.service
-	cp /tmp/electrumx-grs/contrib/systemd/electrumx.conf /etc/
+	cp /tmp/electrumx-grs/contrib/systemd/electrumx.conf /etc/electrumx-grs.conf
 	if [ $USE_ROCKSDB == 1 ]; then
 		echo -e "\nDB_ENGINE=rocksdb" >> /etc/electrumx-grs.conf
 	fi

@@ -227,6 +227,9 @@ if [ $UPDATE_ONLY == 0 ] || [ $UPDATE_PYTHON == 1 ]; then
 	_status "Installing electrumx-grs"
 	install_electrumx
 
+  _status "Installing groestlcoin_hash"
+  install_groestlcoin_hash
+
 	if [ $UPDATE_PYTHON == 0 ]; then
 
 		_status "Installing init scripts"

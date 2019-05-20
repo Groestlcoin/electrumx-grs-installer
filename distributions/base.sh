@@ -54,6 +54,11 @@ function install_python_rocksdb {
 	$python -m pip install python-rocksdb || _error "Could not install python_rocksdb" 1
 }
 
+function install_groestlcoin_hash {
+    $python -m pip install "Cython>=0.20"
+	$python -m pip install groestlcoin_hash || _error "Could not install groestlcoin_hash" 1
+}
+
 function add_user {
 	useradd electrumx-grs
 	id -u electrumx-grs || _error "Could not add user account" 1
@@ -78,8 +83,8 @@ function generate_cert {
 	cd $_DIR
 	echo -e "\nSSL_CERTFILE=/etc/electrumx-grs/server.crt" >> /etc/electrumx-grs.conf
 	echo "SSL_KEYFILE=/etc/electrumx-grs/server.key" >> /etc/electrumx-grs.conf
-        echo "TCP_PORT=50001" >> /etc/electrumx-grs.conf
-        echo "SSL_PORT=50002" >> /etc/electrumx-grs.conf
+        echo "SERVICES=tcp://:50001,ssl://:50002,wss://:50004" >> /etc/electrumx-grs.conf
+        echo "REPORT_SERVICES=tcp://electrumx.groestlcoin.org:50001,ssl://electrumx.groestlcoin.org:50002" >> /etc/electrumx-grs.conf
         echo -e "# Listen on all interfaces:\nHOST=" >> /etc/electrumx-grs.conf
 }
 

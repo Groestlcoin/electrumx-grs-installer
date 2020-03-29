@@ -13,7 +13,7 @@ function install_electrumx {
 	rm -rf "/tmp/electrumx-grs/"
 	git clone $ELECTRUMX_GIT_URL /tmp/electrumx-grs
 	cd /tmp/electrumx-grs
-	if [ -z "$ELECTRUMX_GIT_BRANCH" ]; then
+	if [ -n "$ELECTRUMX_GIT_BRANCH" ]; then
 		git checkout $ELECTRUMX_GIT_BRANCH
 	else
 		git checkout $(git describe --tags)

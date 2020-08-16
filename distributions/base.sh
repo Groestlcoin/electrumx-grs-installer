@@ -83,7 +83,7 @@ function generate_cert {
 	cd $_DIR
 	echo -e "\nSSL_CERTFILE=/etc/electrumx-grs/server.crt" >> /etc/electrumx-grs.conf
 	echo "SSL_KEYFILE=/etc/electrumx-grs/server.key" >> /etc/electrumx-grs.conf
-        echo "SERVICES=tcp://:50001,ssl://:50002,wss://:50004" >> /etc/electrumx-grs.conf
+        echo "SERVICES=tcp://:50001,ssl://:50002,wss://:50004,rpc://" >> /etc/electrumx-grs.conf
         echo "REPORT_SERVICES=tcp://electrumx.groestlcoin.org:50001,ssl://electrumx.groestlcoin.org:50002" >> /etc/electrumx-grs.conf
         echo -e "# Listen on all interfaces:\nHOST=" >> /etc/electrumx-grs.conf
 }
